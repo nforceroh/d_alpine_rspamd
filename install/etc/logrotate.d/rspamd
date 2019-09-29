@@ -1,4 +1,4 @@
-/var/log/rspamd/*.log {
+/var/log/rspamd/rspamd.log {
     daily
     ifempty
     rotate 7

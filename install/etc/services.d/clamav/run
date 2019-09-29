@@ -1,6 +1,7 @@
 #!/usr/bin/with-contenv bash
 
-while [ ! -f /tmp/state/rspamd-init ]; do
+while [ ! -f /tmp/state/clamav-init ]
+do
   sleep 1
 done
 
@@ -11,5 +12,5 @@ if [ "$DEBUG_MODE" = "TRUE" ] || [ "$DEBUG_MODE" = "true" ]; then
 fi
 
 echo ''
-echo '** Starting rspamd'
-exec rspamd --user rspamd --group rspamd --no-fork $DEBUG_ARG
+echo '** Starting clamav'
+exec s6-setuidgid clamav clamd --foreground $DEBUG_ARG

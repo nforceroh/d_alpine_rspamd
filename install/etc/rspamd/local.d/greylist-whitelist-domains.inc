@@ -1,0 +1,13 @@
+amazon.com
+amazonses.com
+gmail.com
+google.com
+ti.com
+microsoft.com
+outlook.com
+anthem.com
+pphosted.com
+st.com
+rr.com
+intuit.com
+luxgroup.net

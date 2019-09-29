@@ -7,31 +7,23 @@ PLUGIN_CLAMAV=${PLUGIN_CLAMAV:-"TRUE"}
 PLUGIN_EMAILS=${PLUGIN_EMAILS:-"TRUE"}
 PLUGIN_GREYLISTING=${PLUGIN_GREYLISTING:-"TRUE"}
 PLUGIN_MILTER=${PLUGIN_MILTER:-"FALSE"}
-CLAMAV_HOST=${CLAMAV_HOST:-"clamav"}
-CLAMAV_PORT=${CLAMAV_PORT:-"3310"}
-REDIS_HOST=${REDIS_HOST:-"rspamd-redis"}
+REDIS_HOST=${REDIS_HOST:-"10.0.0.101"}
 REDIS_PORT=${REDIS_PORT:-"6379"}
 REDIS_TIMEOUT=${REDIS_TIMEOUT:-"15s"}
 REDIS_DB=${REDIS_DB:-"7"}
 LOG_LEVEL=${LOG_LEVEL:-"info"} # error,warning,info,debug
 
-
 ### Set Password
-sed -i -e '/password  = /c\password  = "'${ADMIN_PASS}'";' /etc/rspamd/local.d/worker-controller.inc
+sed -i -e '/password = /c\password  = "'${ADMIN_PASS}'";' /etc/rspamd/local.d/worker-controller.inc
 
 ### Set Log Level
 sed -i -e '/level = /c\level = "'${LOG_LEVEL}'";' /etc/rspamd/local.d/logging.inc
 
 
 ### Setup Redis
-[[ -n "$REDIS_PASS" ]] && $REDIS_PASS='password = "'$REDIS_PASS'";'
 cat <<EOF > /etc/rspamd/local.d/redis.conf
-redis {
 servers = "$REDIS_HOST:$REDIS_PORT";
-timeout = "$REDIS_TIMEOUT";
 db = "$REDIS_DB";
-$REDIS_PASS
-}
 EOF
 
 sed -i -e '/servers = /c\servers = "'${REDIS_HOST}':'${REDIS_PORT}'";' /etc/rspamd/local.d/classifier-bayes.conf
@@ -44,51 +36,36 @@ nrows = 2000; # Default rows limit
 compress = true; # Use zstd compression when storing data in redis
 EOF
 
-### ASN Module
-	  if [ "$PLUGIN_ASN" = "TRUE" ] || [ "$PLUGIN_ASN" = "true" ];  then
-		if [ ! -f /etc/rspamd/local.d/asn.conf ] ; then
-	       cp -R /assets/rspamd/asn.conf /etc/rspamd/local.d/asn.conf
-	    fi
-	  fi  
-
-### Enable Clam Antivirus Checks
-	  if [ "$PLUGIN_CLAMAV" = "TRUE" ] || [ "$PLUGIN_CLAMAV" = "true" ];  then
-		if [ ! -f /etc/rspamd/local.d/antivirus.conf ] ; then
-	       cp -R /assets/rspamd/antivirus.conf /etc/rspamd/local.d/antivirus.conf
-	    fi
-	    sed -i -e '/  servers = /c\  servers = "'${CLAMAV_HOST}':'${CLAMAV_PORT}'";' /etc/rspamd/local.d/antivirus.conf
-	  fi  
-
-### Emails Module
-	  if [ "$PLUGIN_EMAILS" = "TRUE" ] || [ "$PLUGIN_EMAILS" = "true" ];  then
-		if [ ! -f /etc/rspamd/local.d/emails.conf ] ; then
-	       cp -R /assets/rspamd/emails.conf /etc/rspamd/local.d/emails.conf
-	    fi
-	  fi  
-
 ### Enable Greylisting
-	  if [ "$PLUGIN_GREYLISTING" = "TRUE" ] || [ "$PLUGIN_GREYLISTING" = "true" ];  then
-		if [ ! -f /etc/rspamd/local.d/greylist.conf ] ; then
-	       cp -R /assets/rspamd/greylist.conf /etc/rspamd/local.d/greylist.conf
-	    fi
-		sed -i -e '/servers = /c\servers = "'${REDIS_HOST}':'${REDIS_PORT}'";' /etc/rspamd/local.d/greylist.conf
-	    
-	  fi  
+#	  if [ "$PLUGIN_GREYLISTING" = "TRUE" ] || [ "$PLUGIN_GREYLISTING" = "true" ];  then
+#		if [ ! -f /etc/rspamd/local.d/greylist.conf ] ; then
+#	       cp -R /assets/rspamd/greylist.conf /etc/rspamd/local.d/greylist.conf
+#	    fi
+#		sed -i -e '/servers = /c\servers = "'${REDIS_HOST}':'${REDIS_PORT}'";' /etc/rspamd/local.d/greylist.conf
+#	    
+#	  fi  
 
 ### Enable Milter
 	  if [ "$PLUGIN_MILTER" = "TRUE" ] || [ "$PLUGIN_MILTER" = "true" ];  then
-		if [ ! -f /etc/rspamd/worker-proxy.inc ] ; then
-	       cp -R /assets/rspamd/worker-proxy.inc /etc/rspamd/worker-proxy.inc
-	    fi
+		sed -i -e '/bind_socket = /c\bind_socket = "'*:11332'";' /etc/rspamd/worker-proxy.conf
+	  fi 
+
+	  if [ "$PLUGIN_DKIM" = "TRUE" ] || [ "$PLUGIN_DKIM" = "true" ];  then
+	  	cp -R /assets/rspamd/dkim_signing.conf /etc/rspamd/local.d/dkim_signing.conf
+		rspamadm dkim_keygen -b 2048 -s dkim -k /var/lib/rspamd/dkim/dkim.key > /var/lib/rspamd/dkim/dkim.txt
+		chmod 440 /var/lib/rspamd/dkim/*
+		cp -R /etc/rspamd/local.d/dkim_signing.conf /etc/rspamd/local.d/arc.conf	  
 	  fi 
 
 FEATURES_ENABLED=`set -o posix; set | sort | grep PLUGIN | grep TRUE |sed -e 's/PLUGIN_//g' | sed -e 's/=TRUE//g' | awk -vRS="" -vOFS=', ' '$1=$1' | tr A-Z a-z`
 echo '** [rspamd] Enabling the following features: '$FEATURES_ENABLED
 
-### Set Permissions
-mkdir -p /var/lib/rspamd
-chown -R rspamd:rspamd /var/lib/rspamd
-
+### Setup Persistent Storage
+if [ ! -d /run/rspamd ]; then
+	mkdir -p /run/rspamd
+fi
+mkdir -p /var/lib/rspamd/dkim
+chown -R rspamd:rspamd /var/lib/rspamd /etc/rspamd /run/rspamd
 
 mkdir -p /tmp/state
-touch /tmp/state/10-rspamd-init
+touch /tmp/state/rspamd-init

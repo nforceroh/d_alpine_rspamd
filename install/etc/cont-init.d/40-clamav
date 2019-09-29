@@ -1,0 +1,35 @@
+#!/usr/bin/with-contenv bash
+
+### Set Debug Mode
+
+DEBUG_MODE=${DEBUG_MODE:-"FALSE"}
+
+if [[ "$DEBUG_MODE" = "TRUE" ]] && [[ "$DEBUG_MODE" = "true" ]]; then
+	set -x
+	DEBUG_ARG="--debug" 
+fi
+
+### Setup Persistent Storage
+if [ ! -d /run/clamav ]; then
+	mkdir -p /run/clamav
+fi
+chown -R clamav:clamav /var/lib/clamav /run/clamav
+
+mkdir -p /assets/cron
+### Setup Cron
+echo '* 1 * * * freshclam --user=clamav --verbose --log=/var/log/clamav/freshclam.log $DEBUG_ARG >/dev/null 2>&1' >/assets/cron/clamav.txt
+echo '* 5 * * * freshclam --user=clamav --verbose --log=/var/log/clamav/freshclam.log $DEBUG_ARG >/dev/null 2>&1' >>/assets/cron/clamav.txt
+echo '* 9 * * * freshclam --user=clamav --verbose --log=/var/log/clamav/freshclam.log $DEBUG_ARG >/dev/null 2>&1' >>/assets/cron/clamav.txt
+echo '* 13 * * * freshclam --user=clamav --verbose --log=/var/log/clamav/freshclam.log $DEBUG_ARG >/dev/null 2>&1' >>/assets/cron/clamav.txt
+echo '* 17 * * * freshclam --user=clamav --verbose --log=/var/log/clamav/freshclam.log $DEBUG_ARG >/dev/null 2>&1' >>/assets/cron/clamav.txt
+echo '* 21 * * * freshclam --user=clamav --verbose --log=/var/log/clamav/freshclam.log $DEBUG_ARG >/dev/null 2>&1' >>/assets/cron/clamav.txt
+crontab -u clamav /assets/cron/clamav.txt
+
+### Check for Definitions
+if [ ! -f /var/lib/clamav/main.cvd  ]; then
+        echo '** [clamav] No Definitions Found, Downloading..'
+	freshclam --user=clamav --verbose --show-progress --log=/var/log/clamav/freshclam.log $DEBUG_ARG
+fi
+
+mkdir -p /tmp/state
+touch /tmp/state/clamav-init
