@@ -16,15 +16,15 @@ ENV ENABLE_SMTP=false \
 RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories \
     && apk update \
     && apk add --no-cache \
-            ca-certificates \
-            rspamd \
-            rspamd-client \
-            rspamd-controller \
-            rspamd-proxy \
-            rspamd-fuzzy \
-            clamav \
-            clamav-libunrar \
-            rsyslog \
+        ca-certificates \
+        rspamd \
+        rspamd-client \
+        rspamd-controller \
+        rspamd-proxy \
+        rspamd-fuzzy \
+        clamav \
+        clamav-libunrar \
+        rsyslog \
  ## Cleanup
     && rm -rf /var/cache/apk/* /usr/src/*
 
