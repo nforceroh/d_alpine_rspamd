@@ -4,7 +4,7 @@ LABEL maintainer Sylvain Martin (sylvain@nforcer.com)
 ### Disable Features From Base Image
 ENV ENABLE_SMTP=false \
     ADMIN_PASS='$2$s3dymobyg84ktaksyhkf8der7juzcnza$omo3btjw5kkawjpsnwx4teh7xfny7136aw9xk1a5w6r3ay4714rb' \
-    REDIS_HOST=10.0.0.101 \
+    REDIS_HOST=redis.int.nforcer.com \
     REDIS_PORT=6379 \
     REDIS_TIMEOUT=15s \
     REDIS_DB=7 \
