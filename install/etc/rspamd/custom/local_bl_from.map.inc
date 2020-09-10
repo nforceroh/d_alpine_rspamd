@@ -1,0 +1,1 @@
+/buyupdated.com$/i

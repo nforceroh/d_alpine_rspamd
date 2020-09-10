@@ -9,12 +9,12 @@ ENV ENABLE_SMTP=false \
     REDIS_TIMEOUT=15s \
     REDIS_DB=7 \
     LOG_LEVEL=info \
-    DEBUG_MODE=true
+    DEBUG_MODE=false
 # error,warning,info,debug
 
 ### Install Dependencies
-RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/repositories \
-    && apk update \
+RUN apk update \
+    && apk upgrade \
     && apk add --no-cache \
         ca-certificates \
         rspamd \
@@ -30,7 +30,8 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
 
 ### Add Files
 ADD install /
-VOLUME [ "/data" ]
+VOLUME [ "/data", "/var/lib/rspamd", "/var/lib/clamav" ]
+
 ### Networking Configuration
 # Port 11334 is for web frontend
 # Port 11332 is for milter
